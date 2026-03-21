@@ -1,24 +1,8 @@
-name: Publish Docker Image
+name: Publish Docker Image on Release
 
 on:
-  push:
-    branches:
-      - main
-      - dev
-    paths:
-      - "Dockerfile"
-      - ".dockerignore"
-      - "app/**"
-      - "components/**"
-      - "contexts/**"
-      - "hooks/**"
-      - "lib/**"
-      - "stores/**"
-      - "locales/**"
-      - "public/**"
-      - "package.json"
-      - "package-lock.json"
-      - ".github/workflows/docker-publish.yml"
+  release:
+    types: [published]
   workflow_dispatch:
 
 env:
@@ -115,8 +99,13 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value={{branch}}
-            type=sha,prefix={{branch}}-
+            type=raw,value=latest
+            type=semver,pattern=v{{version}}
+            type=semver,pattern={{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=semver,pattern={{major}}
 
       - name: Create manifest list and push
         working-directory: /tmp/digests
