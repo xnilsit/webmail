@@ -19,11 +19,9 @@ interface PluginEntry {
   permissions: string[];
   installedAt: string;
   updatedAt: string;
-  /** True when loaded from PLUGIN_DEV_DIR (read-only, managed via filesystem) */
-  dev?: boolean;
 }
 
-export default function AdminPluginsPage() {
+export function PluginsTab() {
   const [plugins, setPlugins] = useState<PluginEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -155,7 +153,6 @@ export default function AdminPluginsPage() {
 
   async function toggleForceEnabled(id: string, forceEnabled: boolean) {
     setMessage(null);
-    // If force-enabling, also ensure the plugin is enabled
     const body: Record<string, unknown> = { id, forceEnabled };
     if (forceEnabled) body.enabled = true;
 
@@ -167,7 +164,6 @@ export default function AdminPluginsPage() {
 
     if (res.ok) {
       setPlugins(prev => prev.map(p => p.id === id ? { ...p, forceEnabled, ...(forceEnabled ? { enabled: true } : {}) } : p));
-      // Also update policy
       setPolicy(prev => {
         const current = prev.forceEnabledPlugins || [];
         return {
@@ -301,7 +297,6 @@ export default function AdminPluginsPage() {
         </div>
       )}
 
-      {/* Plugin Policy */}
       <div className="border border-border rounded-lg">
         <div className="px-4 py-3 border-b border-border bg-muted/30">
           <div className="flex items-center gap-2">
@@ -344,7 +339,6 @@ export default function AdminPluginsPage() {
             </button>
           </div>
 
-          {/* Force enable / disable all */}
           {plugins.length > 0 && (
             <div className="px-4 py-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <div>
@@ -372,7 +366,6 @@ export default function AdminPluginsPage() {
         </div>
       </div>
 
-      {/* Deployed Plugins */}
       <div className="border border-border rounded-lg">
         <div className="px-4 py-3 border-b border-border bg-muted/30">
           <div className="flex items-center gap-2">
@@ -398,11 +391,6 @@ export default function AdminPluginsPage() {
                     <span className={`text-xs px-1.5 py-0.5 rounded ${plugin.enabled ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400' : 'bg-muted text-muted-foreground'}`}>
                       {plugin.enabled ? 'Enabled' : 'Disabled'}
                     </span>
-                    {plugin.dev && (
-                      <span className="text-xs px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400" title="Loaded from PLUGIN_DEV_DIR — managed via filesystem">
-                        Dev
-                      </span>
-                    )}
                     {plugin.forceEnabled && (
                       <span className="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 flex items-center gap-1">
                         <Lock className="w-3 h-3" /> Forced
@@ -435,25 +423,22 @@ export default function AdminPluginsPage() {
                 </Link>
                 <button
                   onClick={() => toggleForceEnabled(plugin.id, !plugin.forceEnabled)}
-                  disabled={plugin.dev}
-                  title={plugin.dev ? 'Dev plugins are managed via filesystem' : plugin.forceEnabled ? 'Remove force-enable (users can disable)' : 'Force enable (users cannot disable)'}
-                  className={`p-2 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${plugin.forceEnabled ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50' : 'hover:bg-accent text-muted-foreground hover:text-foreground'}`}
+                  title={plugin.forceEnabled ? 'Remove force-enable (users can disable)' : 'Force enable (users cannot disable)'}
+                  className={`p-2 rounded-md transition-colors ${plugin.forceEnabled ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50' : 'hover:bg-accent text-muted-foreground hover:text-foreground'}`}
                 >
                   {plugin.forceEnabled ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
                 </button>
                 <button
                   onClick={() => togglePlugin(plugin.id, !plugin.enabled)}
-                  disabled={plugin.dev}
-                  title={plugin.dev ? 'Dev plugins are always enabled' : plugin.enabled ? 'Disable' : 'Enable'}
-                  className="p-2 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent"
+                  title={plugin.enabled ? 'Disable' : 'Enable'}
+                  className="p-2 rounded-md hover:bg-accent text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <Power className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => deletePlugin(plugin.id, plugin.name)}
-                  disabled={plugin.dev}
-                  title={plugin.dev ? 'Delete the folder in PLUGIN_DEV_DIR to remove' : 'Remove'}
-                  className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                  title="Remove"
+                  className="p-2 rounded-md hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
